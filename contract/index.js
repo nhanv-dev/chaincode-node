@@ -1,5 +1,9 @@
 import assetTransfer from './assetTransfer';
 
 const AssetTransfer = assetTransfer
-export default AssetTransfer 
-export const contracts = [assetTransfer]; 
+export default AssetTransfer
+export const contracts = [assetTransfer];
+
+// import { Express } from 'express';
+
+// const app = Express();

@@ -1,4 +1,5 @@
 'use strict';
+
 import { Contract } from 'fabric-contract-api';
 // import stringify from 'json-stringify-deterministic';
 // import sortKeysRecursive from 'sort-keys-recursive';
@@ -57,19 +58,14 @@ class assetTransfer extends Contract {
         }
     }
 
-    async queryMarks(ctx, studentId) {
-
-        let marksAsBytes = await ctx.stub.getState(studentId);
-
+    async getCar(ctx, carId) {
+        const marksAsBytes = await ctx.stub.getState(carId);
         if (!marksAsBytes || marksAsBytes.toString().length <= 0) {
-
-            throw new Error('Student with this Id does not exist: ');
-
+            throw new Error('Car with this Id does not exist: ');
         }
 
-        let marks = JSON.parse(marksAsBytes.toString());
+        const marks = JSON.parse(marksAsBytes.toString());
         return JSON.stringify(marks);
-
     }
 }
 
