@@ -58,14 +58,33 @@ class assetTransfer extends Contract {
         }
     }
 
-    async getCar(ctx, carId) {
-        const marksAsBytes = await ctx.stub.getState(carId);
+    async GetAsset(ctx, ID) {
+        const marksAsBytes = await ctx.stub.getState(ID);
         if (!marksAsBytes || marksAsBytes.toString().length <= 0) {
             throw new Error('Car with this Id does not exist: ');
         }
 
         const marks = JSON.parse(marksAsBytes.toString());
         return JSON.stringify(marks);
+    }
+
+    async GetAllAssets(ctx) {
+        const results = [];
+        const iterator = await ctx.stub.getStateByRange('', '');
+        let result = await iterator.next();
+        while (!result.done) {
+            const value = Buffer.from(result.value.value.toString()).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(value);
+            } catch (error) {
+                console.log(error);
+                record = value;
+            }
+            results.push({ Key: result.value.key, Record: record });
+            result = await iterator.next();
+        }
+        return JSON.stringify(results);
     }
 }
 
