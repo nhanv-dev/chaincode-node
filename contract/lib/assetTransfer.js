@@ -106,7 +106,7 @@ class AssetTransfer extends Contract {
         }
     }
 
-    async insertCar(ctx, key, color, owner, size) {
+    async insertCar(ctx, key, color, size, owner) {
         const car = {
             color,
             size,
@@ -116,7 +116,7 @@ class AssetTransfer extends Contract {
         await ctx.stub.putState(key, Buffer.from(JSON.stringify(car)))
     }
 
-    async updateCar(ctx, key, color, owner, size) {
+    async updateCar(ctx, key, color, size, owner) {
         const carAsBytes = await ctx.stub.getState(key);
         if (!carAsBytes || carAsBytes.length === 0) {
             throw new Error(`${carNumber} does not exist`);

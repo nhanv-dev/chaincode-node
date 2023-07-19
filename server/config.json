@@ -17,5 +17,9 @@
     "walletPath": "/home/nhan/go/src/github.com/nhanv-dev/chaincode-node/server/wallet",
     "testNetwork": {
         "dirName": "/home/nhan/go/src/github.com/nhanv-dev/fabric-samples"
+    },
+    "gatewayDiscovery": {
+        "enabled": true,
+        "asLocalhost": true
     }
 }
