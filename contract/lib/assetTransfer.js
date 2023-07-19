@@ -1,8 +1,3 @@
-/*
- * Copyright IBM Corp. All Rights Reserved.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
 
 'use strict';
 
@@ -14,9 +9,6 @@ const { Contract } = require('fabric-contract-api');
 class AssetTransfer extends Contract {
 
     async initLedger(ctx) {
-
-        console.info('============= START : Initialize Ledger ===========');
-
         const assets = [
             {
                 ID: 'CAR1',
@@ -60,8 +52,6 @@ class AssetTransfer extends Contract {
             asset.docType = 'asset';
             await ctx.stub.putState(asset.ID, Buffer.from(stringify(sortKeysRecursive(asset))));
         }
-
-        console.info('============= END : Initialize Ledger ===========');
     }
 
     async queryAllCars(ctx) {
@@ -114,6 +104,30 @@ class AssetTransfer extends Contract {
             console.err('Did not find the car with carNo ' + key);
             return [];
         }
+    }
+
+    async insertCar(ctx, key, color, owner, size) {
+        const car = {
+            color,
+            size,
+            owner,
+            docType: 'car',
+        };
+        await ctx.stub.putState(key, Buffer.from(JSON.stringify(car)))
+    }
+
+    async updateCar(ctx, key, color, owner, size) {
+        const carAsBytes = await ctx.stub.getState(key);
+        if (!carAsBytes || carAsBytes.length === 0) {
+            throw new Error(`${carNumber} does not exist`);
+        }
+        const car = {
+            color,
+            size,
+            owner,
+            docType: 'car',
+        };
+        await ctx.stub.putState(key, Buffer.from(JSON.stringify(car)));
     }
 
 }
