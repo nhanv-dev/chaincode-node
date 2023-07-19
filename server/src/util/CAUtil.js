@@ -1,8 +1,41 @@
 
 'use strict';
 
-const adminUserId = 'admin';
-const adminUserPasswd = 'adminpw';
+const path = require('path');
+
+const { Gateway, Wallets } = require('fabric-network');
+const FabricCAServices = require('fabric-ca-client');
+const { buildWallet, buildCCPOrg1 } = require('./AppUtil');
+
+const config = require('../../config.json');
+const walletPath = path.join(config.walletPath)
+
+exports.buildConnection = async () => {
+
+	try {
+		const ccp = buildCCPOrg1();
+		const caClient = this.buildCAClient(FabricCAServices, ccp, config.ca.hostname);
+		const wallet = await buildWallet(Wallets, walletPath);
+
+		// network mới không thể sử dụng wallet cũ
+		await this.enrollAdmin(caClient, wallet, config.org1.msp);
+		await this.registerAndEnrollUser(caClient, wallet, config.org1.msp, config.org1.userId, config.org1.affiliation);
+
+		const gateway = new Gateway();
+		await gateway.connect(ccp, {
+			wallet,
+			identity: config.org1.userId,
+			discovery: { enabled: true, asLocalhost: true }
+		});
+
+		const network = await gateway.getNetwork(config.channelName);
+		const contract = network.getContract(config.chaincodeName);
+
+		return { contract, gateway }
+	} catch (error) {
+		console.log(error.message);
+	}
+}
 
 exports.buildCAClient = (FabricCAServices, ccp, caHostName) => {
 	// Create a new CA client for interacting with the CA.
@@ -18,13 +51,13 @@ exports.buildCAClient = (FabricCAServices, ccp, caHostName) => {
 exports.enrollAdmin = async (caClient, wallet, orgMspId) => {
 	try {
 		// Check to see if we've already enrolled the admin user.
-		const identity = await wallet.get(adminUserId);
+		const identity = await wallet.get(config.admin.userId);
 		if (identity) {
 			console.log('An identity for the admin user already exists in the wallet');
 			return;
 		}
 		// Enroll the admin user, and import the new identity into the wallet.
-		const enrollment = await caClient.enroll({ enrollmentID: adminUserId, enrollmentSecret: adminUserPasswd });
+		const enrollment = await caClient.enroll({ enrollmentID: config.admin.userId, enrollmentSecret: config.admin.password });
 		const x509Identity = {
 			credentials: {
 				certificate: enrollment.certificate,
@@ -33,7 +66,8 @@ exports.enrollAdmin = async (caClient, wallet, orgMspId) => {
 			mspId: orgMspId,
 			type: 'X.509',
 		};
-		await wallet.put(adminUserId, x509Identity);
+
+		await wallet.put(config.admin.userId, x509Identity);
 		console.log('Successfully enrolled admin user and imported it into the wallet');
 	} catch (error) {
 		console.error(error)
@@ -45,13 +79,14 @@ exports.registerAndEnrollUser = async (caClient, wallet, orgMspId, userId, affil
 	try {
 		// Check to see if we've already enrolled the user
 		const userIdentity = await wallet.get(userId);
+
 		if (userIdentity) {
 			console.log(`An identity for the user ${userId} already exists in the wallet`);
 			return;
 		}
 
 		// Must use an admin to register a new user
-		const adminIdentity = await wallet.get(adminUserId);
+		const adminIdentity = await wallet.get(config.admin.userId);
 		if (!adminIdentity) {
 			console.log('An identity for the admin user does not exist in the wallet');
 			console.log('Enroll the admin user before retrying');
@@ -60,7 +95,8 @@ exports.registerAndEnrollUser = async (caClient, wallet, orgMspId, userId, affil
 
 		// build a user object for authenticating with the CA
 		const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
-		const adminUser = await provider.getUserContext(adminIdentity, adminUserId);
+		const adminUser = await provider.getUserContext(adminIdentity, config.admin.userId);
+		// console.log(adminUser);
 
 		// Register the user, enroll the user, and import the new identity into the wallet.
 		// if affiliation is specified by client, the affiliation value must be configured in CA
@@ -70,12 +106,11 @@ exports.registerAndEnrollUser = async (caClient, wallet, orgMspId, userId, affil
 			role: 'client'
 		}, adminUser);
 
-		console.log(secret);
-
 		const enrollment = await caClient.enroll({
 			enrollmentID: userId,
 			enrollmentSecret: secret
 		});
+
 		const x509Identity = {
 			credentials: {
 				certificate: enrollment.certificate,
@@ -84,36 +119,7 @@ exports.registerAndEnrollUser = async (caClient, wallet, orgMspId, userId, affil
 			mspId: orgMspId,
 			type: 'X.509',
 		};
-		await wallet.put(userId, x509Identity);
-		console.log(`Successfully registered and enrolled user ${userId} and imported it into the wallet`);
-	} catch (error) {
-		console.error(`Failed to register user : ${error}`);
-	}
-};
 
-exports.enrollUser = async (caClient, wallet, orgMspId, userId, affiliation) => {
-	try {
-		// Check to see if we've already enrolled the user
-		const userIdentity = await wallet.get(userId);
-		if (!userIdentity) {
-			console.log(`An identity for the user ${userId} not exists in the wallet`);
-			return;
-		}
-
-		console.log(userIdentity);
-
-		const enrollment = await caClient.enroll({
-			enrollmentID: userId,
-			enrollmentSecret: secret
-		});
-		const x509Identity = {
-			credentials: {
-				certificate: enrollment.certificate,
-				privateKey: enrollment.key.toBytes(),
-			},
-			mspId: orgMspId,
-			type: 'X.509',
-		};
 		await wallet.put(userId, x509Identity);
 		console.log(`Successfully registered and enrolled user ${userId} and imported it into the wallet`);
 	} catch (error) {

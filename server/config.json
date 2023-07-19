@@ -1,0 +1,21 @@
+{
+    "channelName": "mychannel",
+    "chaincodeName": "basic",
+    "ca": {
+        "hostname": "ca.org1.example.com"
+    },
+    "admin": {
+        "userId": "admin",
+        "password": "adminpw"
+    },
+    "org1": {
+        "msp": "Org1MSP",
+        "userId": "org1User",
+        "affiliation": "org1.department1",
+        "connection": "test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json"
+    },
+    "walletPath": "/home/nhan/go/src/github.com/nhanv-dev/chaincode-node/server/wallet",
+    "testNetwork": {
+        "dirName": "/home/nhan/go/src/github.com/nhanv-dev/fabric-samples"
+    }
+}

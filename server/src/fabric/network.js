@@ -1,56 +1,59 @@
 
 'use strict'
 
-const { Gateway, Wallets } = require('fabric-network');
-const FabricCAServices = require('fabric-ca-client');
-const { buildCCPOrg1, buildWallet } = require('../util/AppUtil');
-const { buildCAClient, enrollAdmin, registerAndEnrollUser, enrollUser } = require('../util/CAUtil');
-
-const path = require('path');
-
-// const realNetwork = '/home/nhan/go/src/github.com/nhanv-dev/fabric-samples/test-network';
-const channelName = 'mychannel';
-const chaincodeName = 'basic';
-const userName = 'admin';
-const mspOrg1 = 'Org1MSP';
-const org1UserId = 'javascriptAppUser';
-
-const walletPath = path.join('/home/nhan/go/src/github.com/nhanv-dev/chaincode-node/server', 'wallet');
-
-function prettyJSONString(inputString) {
-    return JSON.stringify(JSON.parse(inputString), null, 2);
-}
-
-async function main() {
-
-    try {
-        const ccp = buildCCPOrg1();
-        const caClient = buildCAClient(FabricCAServices, ccp, 'ca.org1.example.com');
-        const wallet = await buildWallet(Wallets, walletPath);
-
-        await enrollAdmin(caClient, wallet, mspOrg1);
-        await registerAndEnrollUser(caClient, wallet, mspOrg1, org1UserId, 'org1.department1');
-
-        const gateway = new Gateway();
-        await gateway.connect(ccp, {
-            wallet,
-            identity: org1UserId,
-            discovery: { enabled: true, asLocalhost: true }
-        });
-        const network = await gateway.getNetwork(channelName);
-        const contract = network.getContract(chaincodeName);
-        return { contract, wallet, caClient }
-    } catch (error) {
-        console.log(error);
-    }
-}
-
+const { buildConnection } = require("../util/CAUtil");
 
 exports.initLedger = async function () {
     try {
-        const { contract } = await main();
+        const connection = await buildConnection();
+        if (!connection) {
+            return { error: 'Build connection failed' };
+        }
+        const { contract, gateway } = connection;
+        if (!contract || !gateway) {
+            return { error: 'Build contract and gateway failed' };
+        }
         await contract.submitTransaction('initLedger');
-        return { message: 'Init Ledger' }
+        await gateway.disconnect();
+        return { message: 'Init Ledger Transaction has been submitted' }
+    } catch (error) {
+        console.error(`Failed to evaluate transaction: ${error}`);
+        return { error: error.message };
+    }
+};
+
+exports.insertCar = async function (key, color, size, owner) {
+    try {
+        const connection = await buildConnection();
+        if (!connection) {
+            return { error: 'Build connection failed' };
+        }
+        const { contract, gateway } = connection;
+        if (!contract || !gateway) {
+            return { error: 'Build contract and gateway failed' };
+        }
+        await contract.submitTransaction('insertCar', key, color, size, owner);
+        await gateway.disconnect();
+        return { message: 'Create Car Transaction has been submitted' };
+    } catch (error) {
+        console.error(`Failed to evaluate transaction: ${error}`);
+        return { error: error.message };
+    }
+};
+
+exports.updateCar = async function (key, color, size, owner) {
+    try {
+        const connection = await buildConnection();
+        if (!connection) {
+            return { error: 'Build connection failed' };
+        }
+        const { contract, gateway } = connection;
+        if (!contract || !gateway) {
+            return { error: 'Build contract and gateway failed' };
+        }
+        await contract.submitTransaction('updateCar', key, color, size, owner);
+        await gateway.disconnect();
+        return { mesage: 'Update Car Transaction has been submitted' };
     } catch (error) {
         console.error(`Failed to evaluate transaction: ${error}`);
         return { error: error.message };
@@ -59,9 +62,16 @@ exports.initLedger = async function () {
 
 exports.queryAllCars = async function () {
     try {
-        const { contract } = await main();
+        const connection = await buildConnection();
+        if (!connection) {
+            return { error: 'Build connection failed' };
+        }
+        const { contract, gateway } = connection;
+        if (!contract || !gateway) {
+            return { error: 'Build contract and gateway failed' };
+        }
         const result = await contract.evaluateTransaction('queryAllCars');
-        console.log(`Result: ${prettyJSONString(result.toString())}`)
+        await gateway.disconnect();
         return result;
     } catch (error) {
         console.error(`Failed to evaluate transaction: ${error}`);
@@ -71,9 +81,16 @@ exports.queryAllCars = async function () {
 
 exports.querySingleCar = async function (key) {
     try {
-        const { contract } = await main();
+        const connection = await buildConnection();
+        if (!connection) {
+            return { error: 'Build connection failed' };
+        }
+        const { contract, gateway } = connection;
+        if (!contract || !gateway) {
+            return { error: 'Build contract and gateway failed' };
+        }
         const result = await contract.evaluateTransaction('querySingleCar', key);
-        console.log(`Result: ${prettyJSONString(result.toString())}`)
+        await gateway.disconnect();
         return result;
     } catch (error) {
         console.error(`Failed to evaluate transaction: ${error}`);

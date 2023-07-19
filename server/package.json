@@ -1,10 +1,9 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "./node_modules/nodemon/bin/nodemon.js src/app.js",
+    "start": "nodemon src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -19,5 +18,8 @@
     "morgan": "^1.10.0",
     "nodemon": "^3.0.1",
     "tar": "^6.1.15"
-  }
+  },
+  "devDependencies": {},
+  "keywords": [],
+  "description": ""
 }
